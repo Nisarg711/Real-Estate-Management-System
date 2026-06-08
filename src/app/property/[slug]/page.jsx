@@ -13,59 +13,87 @@ export default function PropertyDetailPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('overview');
   const [showContactForm, setShowContactForm] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [contactData, setContactData] = useState({ name: '', phone: '', email: '', message: '' });
+  const [property, setProperty] = useState(null);
+  const [error, setError] = useState(null);
 
-  // Dummy property data - Replace with actual API call later
-  const propertyData = {
-    apn: apn,
-    title: 'Luxury Modern Apartment in Anand City',
-    price: '₹45,00,000',
-    monthlyRent: '₹25,000',
-    availableFor: 'Both',
-    status: 'Available',
-    area: 2500,
-    bedrooms: 3,
-    bathrooms: 2,
-    yearBuilt: 2022,
-    type: 'Apartment',
-    state: 'Gujarat',
-    city: 'Anand',
-    district: 'Anand',
-    locality: 'Anand City Taluka',
-    pincode: '388001',
-    neighborhood: 'Premium residential locality with excellent connectivity to schools, hospitals, and shopping centers.',
-    images: [
-      'https://via.placeholder.com/800x600?text=Property+Image+1',
-      'https://via.placeholder.com/800x600?text=Property+Image+2',
-      'https://via.placeholder.com/800x600?text=Property+Image+3',
-      'https://via.placeholder.com/800x600?text=Property+Image+4',
-    ],
-    amenities: ['Swimming Pool', 'Gym', 'Garden', 'Parking', 'Security', '24/7 Power', 'WiFi'],
-    owner: {
-      name: 'Rajesh Kumar',
-      contact: '+91-9876543210',
-      email: 'rajesh@example.com',
-      role: 'Property Owner',
-      verified: true,
-    },
-    agent: {
-      name: 'Priya Singh',
-      contact: '+91-9123456789',
-      email: 'priya@agents.com',
-      role: 'Real Estate Agent',
-      verified: true,
-      licenseNo: 'LIC123456',
-    },
-    description: 'This stunning luxury apartment offers modern living at its finest. Located in the heart of Anand City, it features premium finishes, spacious rooms, and breathtaking views. Perfect for families and professionals seeking comfort and convenience. The property includes state-of-the-art amenities and 24/7 security.',
-    highlights: [
-      'Prime location with excellent connectivity',
-      'Recently renovated with premium fixtures',
-      'Spacious balcony with city views',
-      'Eco-friendly construction',
-      'Low maintenance society'
-    ]
-  };
+  // Fetch property data on mount
+  useEffect(() => {
+    const fetchProperty = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/fetch/properties?apn=${apn}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({})
+        });
+        
+        if (!res.ok) {
+          throw new Error('Failed to fetch property');
+        }
+        
+        const data = await res.json();
+        console.log("Fetched property data: ", data.property);
 
+        const property = {
+          apn: data.property.apn,
+          title: data.property.title,
+          price: data.property.sell?.price ? `₹${data.property.sell.price.toLocaleString()}` : 'Price on request',
+          monthlyRent: data.property.rent?.monthlyRent ? `₹${data.property.rent.monthlyRent.toLocaleString()}` : null,
+          availableFor: data.property.availableFor,
+          status: data.property.status,
+          area: data.property.area,
+          builtYear: data.property.builtYear,
+          type: data.property.type,
+          state: data.property.state,
+          city: data.property.city,
+          district: data.property.district,
+          locality: data.property.localAddress,
+          pincode: data.property.pincode,
+          neighborhood: data.property.neighborhoodInfo,
+          images: data.property.images.length > 0 ? data.property.images.map(img => img.url) : ['https://via.placeholder.com/800x600?text=No+Image'],
+          amenities: data.property.amenities.length > 0 ? data.property.amenities : ['No amenities listed'],
+          owner: {
+            name: data.property.owner?.name || 'N/A',
+            contact: data.property.owner?.contact || 'N/A',
+            email: data.property.owner?.email || 'N/A',
+            role: 'Property Owner',
+            verified: true,
+          },
+          agent: data.property.agent ? {
+            name: data.property.agent.name || 'N/A',
+            contact: data.property.agent.contact || 'N/A',
+            email: data.property.agent.email || 'N/A',
+            role: 'Real Estate Agent',
+            verified: true,
+            licenseNo: data.property.agent.licenseNo || 'N/A',
+          } : null,
+          description: `Located in ${data.property.city}, ${data.property.state}, this ${data.property.type.toLowerCase()} offers ${data.property.area} sq.ft of space. ${data.property.neighborhoodInfo}`,
+          highlights: [
+            `Built in ${data.property.builtYear}`,
+            `Located in ${data.property.district}`,
+            `${data.property.area} sq.ft`,
+            `Status: ${data.property.status}`,
+            `Available for: ${data.property.availableFor}`
+          ]
+        };
+        
+        setProperty(property);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching property:', error);
+        setError(error.message);
+        setLoading(false);
+      }
+    };
+
+    if (apn) {
+      fetchProperty();
+    }
+  }, [apn]);
   // Handle contact form
   const handleContactChange = (e) => {
     const { name, value } = e.target;
@@ -83,8 +111,35 @@ export default function PropertyDetailPage() {
     setContactData({ name: '', phone: '', email: '', message: '' });
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-dark-text-secondary text-lg">Loading property details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !property) {
+    return (
+      <div className="min-h-screen bg-dark-bg">
+        <main className="max-w-6xl mx-auto px-6 py-8">
+          <Link href="/dashboard" className="flex items-center gap-2 text-accent-light hover:text-accent-primary font-medium mb-6 transition">
+            <ArrowLeft size={20} />
+            Back to Dashboard
+          </Link>
+          <div className="bg-dark-bg-secondary rounded-lg border border-dark-border p-8 text-center">
+            <p className="text-dark-text-secondary text-lg">{error || 'Property not found'}</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <>
+     <div className="min-h-screen bg-dark-bg">
       <Navbar />
 
       <main className="max-w-6xl mx-auto px-6 py-8">
@@ -97,14 +152,14 @@ export default function PropertyDetailPage() {
         {/* Header with Price and Actions */}
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h1 className="text-4xl font-bold text-dark-text mb-2">{propertyData.title}</h1>
+            <h1 className="text-4xl font-bold text-dark-text mb-2">{property.title}</h1>
             <div className="flex items-center gap-4">
-              <span className="text-2xl font-bold text-accent-primary">{propertyData.price}</span>
+              <span className="text-2xl font-bold text-accent-primary">{property.price}</span>
               <span className="px-3 py-1 bg-accent-primary/10 text-accent-primary rounded-full text-sm font-medium border border-accent-primary/30">
-                {propertyData.status}
+                {property.status}
               </span>
-              {propertyData.monthlyRent && (
-                <span className="text-dark-text-secondary">Rent: {propertyData.monthlyRent}/month</span>
+              {property.monthlyRent && (
+                <span className="text-dark-text-secondary">Rent: {property.monthlyRent}/month</span>
               )}
             </div>
           </div>
@@ -116,12 +171,12 @@ export default function PropertyDetailPage() {
               className="p-3 bg-dark-bg-secondary rounded-full border border-dark-border hover:border-accent-primary/50 hover:bg-dark-bg-hover transition"
             >
               <Heart
-                size={24}
+                size={15}
                 className={isFavorite ? 'text-red-400 fill-red-400' : 'text-dark-text-muted'}
               />
             </button>
             <button className="p-3 bg-dark-bg-secondary rounded-full border border-dark-border hover:border-accent-primary/50 hover:bg-dark-bg-hover transition">
-              <Share2 size={24} className="text-dark-text-muted" />
+              <Share2 size={15} className="text-dark-text-muted" />
             </button>
           </div>
         </div>
@@ -133,7 +188,7 @@ export default function PropertyDetailPage() {
             <div className="bg-dark-bg-secondary rounded-lg overflow-hidden border border-dark-border shadow-dark-lg">
               <div className="relative h-96 bg-gradient-to-br from-dark-bg-tertiary via-dark-bg-secondary to-accent-primary/10">
                 <img
-                  src={propertyData.images[selectedImageIndex]}
+                  src={property.images[selectedImageIndex]}
                   alt={`Property view ${selectedImageIndex + 1}`}
                   className="w-full h-full object-cover"
                 />
@@ -141,7 +196,7 @@ export default function PropertyDetailPage() {
 
               {/* Image Thumbnails */}
               <div className="flex gap-2 p-4 bg-dark-bg-secondary border-t border-dark-border overflow-x-auto">
-                {propertyData.images.map((img, idx) => (
+                {property.images.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedImageIndex(idx)}
@@ -158,7 +213,7 @@ export default function PropertyDetailPage() {
             {/* Tabs */}
             <div className="bg-dark-bg-secondary rounded-lg border border-dark-border overflow-hidden">
               <div className="flex border-b border-dark-border">
-                {['overview', 'amenities', 'location', 'agent'].map((tab) => (
+                {['overview', 'amenities', 'location', 'Point of Contact'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -184,42 +239,42 @@ export default function PropertyDetailPage() {
                           <Bed size={20} className="text-accent-primary" />
                           <span className="text-dark-text-secondary text-sm">Bedrooms</span>
                         </div>
-                        <p className="text-2xl font-bold text-dark-text">{propertyData.bedrooms}</p>
+                        <p className="text-2xl font-bold text-dark-text">{property.bedrooms}</p>
                       </div>
                       <div className="bg-dark-bg-primary p-4 rounded-lg border border-dark-border">
                         <div className="flex items-center gap-3 mb-2">
                           <Bath size={20} className="text-accent-primary" />
                           <span className="text-dark-text-secondary text-sm">Bathrooms</span>
                         </div>
-                        <p className="text-2xl font-bold text-dark-text">{propertyData.bathrooms}</p>
+                        <p className="text-2xl font-bold text-dark-text">{property.bathrooms}</p>
                       </div>
                       <div className="bg-dark-bg-primary p-4 rounded-lg border border-dark-border">
                         <div className="flex items-center gap-3 mb-2">
                           <Maximize2 size={20} className="text-accent-primary" />
                           <span className="text-dark-text-secondary text-sm">Area</span>
                         </div>
-                        <p className="text-2xl font-bold text-dark-text">{propertyData.area.toLocaleString()} sq.ft</p>
+                        <p className="text-2xl font-bold text-dark-text">{property.area.toLocaleString()} sq.ft</p>
                       </div>
                       <div className="bg-dark-bg-primary p-4 rounded-lg border border-dark-border">
                         <div className="flex items-center gap-3 mb-2">
                           <Building2 size={20} className="text-accent-primary" />
                           <span className="text-dark-text-secondary text-sm">Built Year</span>
                         </div>
-                        <p className="text-2xl font-bold text-dark-text">{propertyData.yearBuilt}</p>
+                        <p className="text-2xl font-bold text-dark-text">{property.builtYear}</p>
                       </div>
                     </div>
 
                     {/* Description */}
                     <div>
                       <h3 className="text-lg font-bold text-dark-text mb-3">About This Property</h3>
-                      <p className="text-dark-text-secondary leading-relaxed">{propertyData.description}</p>
+                      <p className="text-dark-text-secondary leading-relaxed">{property.description}</p>
                     </div>
 
                     {/* Highlights */}
                     <div>
                       <h3 className="text-lg font-bold text-dark-text mb-3">Property Highlights</h3>
                       <ul className="space-y-2">
-                        {propertyData.highlights.map((highlight, idx) => (
+                        {property.highlights?.map((highlight, idx) => (
                           <li key={idx} className="flex items-start gap-3 text-dark-text-secondary">
                             <span className="text-accent-primary text-xl leading-none">✓</span>
                             <span>{highlight}</span>
@@ -234,7 +289,7 @@ export default function PropertyDetailPage() {
                   <div>
                     <h3 className="text-lg font-bold text-dark-text mb-4">Amenities & Features</h3>
                     <div className="grid grid-cols-2 gap-3">
-                      {propertyData.amenities.map((amenity, idx) => (
+                      {property.amenities.map((amenity, idx) => (
                         <div key={idx} className="flex items-center gap-3 p-3 bg-dark-bg-primary rounded-lg border border-dark-border">
                           <div className="w-2 h-2 bg-accent-primary rounded-full" />
                           <span className="text-dark-text">{amenity}</span>
@@ -252,28 +307,28 @@ export default function PropertyDetailPage() {
                         <MapPin size={20} className="text-accent-primary flex-shrink-0 mt-1" />
                         <div>
                           <p className="text-sm text-dark-text-secondary">Address</p>
-                          <p className="text-dark-text">{propertyData.locality}, {propertyData.city}, {propertyData.state}</p>
+                          <p className="text-dark-text">{property.locality}, {property.city}, {property.state}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3 p-3 bg-dark-bg-primary rounded-lg border border-dark-border">
                         <MapPinIcon size={20} className="text-accent-primary flex-shrink-0 mt-1" />
                         <div>
                           <p className="text-sm text-dark-text-secondary">Postal Code</p>
-                          <p className="text-dark-text">{propertyData.pincode}</p>
+                          <p className="text-dark-text">{property.pincode}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3 p-3 bg-dark-bg-primary rounded-lg border border-dark-border">
                         <Home size={20} className="text-accent-primary flex-shrink-0 mt-1" />
                         <div>
                           <p className="text-sm text-dark-text-secondary">Neighborhood</p>
-                          <p className="text-dark-text">{propertyData.neighborhood}</p>
+                          <p className="text-dark-text">{property.neighborhood}</p>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {activeTab === 'agent' && (
+                {activeTab === 'Point of Contact' && (
                   <div className="space-y-6">
                     {/* Agent Card */}
                     <div className="p-4 bg-dark-bg-primary rounded-lg border border-dark-border">
@@ -284,15 +339,15 @@ export default function PropertyDetailPage() {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="text-lg font-bold text-dark-text">{propertyData.agent.name}</h4>
-                              {propertyData.agent.verified && (
+                              <h4 className="text-lg font-bold text-dark-text">{property.agent.name}</h4>
+                              {property.agent.verified && (
                                 <span className="px-2 py-1 bg-green-500/10 text-green-400 text-xs rounded border border-green-500/30 flex items-center gap-1">
                                   <Award size={12} /> Verified
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-dark-text-secondary">{propertyData.agent.role}</p>
-                            <p className="text-xs text-dark-text-secondary mt-1">Lic. No: {propertyData.agent.licenseNo}</p>
+                            <p className="text-sm text-dark-text-secondary">{property.agent.role}</p>
+                            <p className="text-xs text-dark-text-secondary mt-1">Lic. No: {property.agent.licenseNo}</p>
                           </div>
                         </div>
                       </div>
@@ -300,11 +355,11 @@ export default function PropertyDetailPage() {
                       <div className="space-y-2 pt-4 border-t border-dark-border">
                         <div className="flex items-center gap-3 text-dark-text-secondary hover:text-accent-primary transition cursor-pointer">
                           <Phone size={18} />
-                          <span>{propertyData.agent.contact}</span>
+                          <span>{property.agent.contact}</span>
                         </div>
                         <div className="flex items-center gap-3 text-dark-text-secondary hover:text-accent-primary transition cursor-pointer">
                           <Mail size={18} />
-                          <span>{propertyData.agent.email}</span>
+                          <span>{property.agent.email}</span>
                         </div>
                       </div>
                     </div>
@@ -318,14 +373,14 @@ export default function PropertyDetailPage() {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="text-lg font-bold text-dark-text">{propertyData.owner.name}</h4>
-                              {propertyData.owner.verified && (
+                              <h4 className="text-lg font-bold text-dark-text">{property.owner.name}</h4>
+                              {property.owner.verified && (
                                 <span className="px-2 py-1 bg-green-500/10 text-green-400 text-xs rounded border border-green-500/30 flex items-center gap-1">
                                   <Award size={12} /> Verified
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-dark-text-secondary">{propertyData.owner.role}</p>
+                            <p className="text-sm text-dark-text-secondary">{property.owner.role}</p>
                           </div>
                         </div>
                       </div>
@@ -333,11 +388,11 @@ export default function PropertyDetailPage() {
                       <div className="space-y-2 pt-4 border-t border-dark-border">
                         <div className="flex items-center gap-3 text-dark-text-secondary hover:text-accent-primary transition cursor-pointer">
                           <Phone size={18} />
-                          <span>{propertyData.owner.contact}</span>
+                          <span>{property.owner.contact}</span>
                         </div>
                         <div className="flex items-center gap-3 text-dark-text-secondary hover:text-accent-primary transition cursor-pointer">
                           <Mail size={18} />
-                          <span>{propertyData.owner.email}</span>
+                          <span>{property.owner.email}</span>
                         </div>
                       </div>
                     </div>
@@ -355,15 +410,15 @@ export default function PropertyDetailPage() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center pb-3 border-b border-dark-border">
                   <span className="text-dark-text-secondary">Type</span>
-                  <span className="text-dark-text font-medium">{propertyData.type}</span>
+                  <span className="text-dark-text font-medium">{property.type}</span>
                 </div>
                 <div className="flex justify-between items-center pb-3 border-b border-dark-border">
                   <span className="text-dark-text-secondary">Available For</span>
-                  <span className="text-dark-text font-medium">{propertyData.availableFor}</span>
+                  <span className="text-dark-text font-medium">{property.availableFor}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-dark-text-secondary">Status</span>
-                  <span className="px-2 py-1 bg-green-500/10 text-green-400 text-sm rounded font-medium">{propertyData.status}</span>
+                  <span className="px-2 py-1 bg-green-500/10 text-green-400 text-sm rounded font-medium">{property.status}</span>
                 </div>
               </div>
             </div>
@@ -429,5 +484,6 @@ export default function PropertyDetailPage() {
         </div>
       </main>
     </div>
+    </>
   );
 }
