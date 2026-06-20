@@ -1,7 +1,7 @@
 from typing import TypedDict, Annotated, Optional
 from langgraph.graph import add_messages, StateGraph, END
 from langchain_groq import ChatGroq
-from langchain_core.messages import HumanMessage, AIMessageChunk, ToolMessage
+from langchain_core.messages import HumanMessage, AIMessageChunk, ToolMessage,SystemMessage
 from dotenv import load_dotenv
 from langchain_community.tools.tavily_search import TavilySearchResults
 from fastapi import FastAPI, Query
@@ -18,6 +18,7 @@ load_dotenv()
 memory = MemorySaver()
 class State(TypedDict):
     messages: Annotated[list, add_messages]
+    route:Optional[str]
 
 search_tool = TavilySearchResults(
     max_results=4,
@@ -35,6 +36,70 @@ async def model(state: State):
     return {
         "messages": [result], 
     }
+
+
+
+async def router(state:State):
+    ROUTER_PROMPT = """You are a routing classifier for Homemakers, a real estate platform in India.
+Your only job is to read the user's message and decide which of three categories it belongs to.
+
+Respond with EXACTLY ONE WORD: sql, search, or chat. Nothing else. No punctuation, no explanation.
+
+Use "sql" when the user is asking to find, search, filter, or browse properties based on 
+specific criteria that would be stored in a database, such as:
+- Location (city, state, district, locality)
+- Price or rent budget (under X, between X and Y)
+- Property type (apartment, villa, independent house)
+- Number of bedrooms/bathrooms, area in sqft
+- Availability (for rent, for sale)
+- Amenities (gym, parking, swimming pool, etc.)
+Examples: "Show me 2BHK flats in Ahmedabad under 50 lakhs", 
+"Are there any villas with a pool in Pune", 
+"What properties are available for rent in Mumbai"
+
+Use "search" when the user is asking about something requiring current, real-world information 
+that is NOT stored in your property database, such as:
+- Real estate news, market trends, or price trends
+- Government policies, loan rates, tax rules
+- General questions about a city or area that aren't about specific listings
+Examples: "What are the latest real estate trends in India", 
+"Is it a good time to invest in Bangalore real estate", 
+"What is RERA"
+
+Use "chat" for everything else, such as:
+- Greetings and small talk
+- Questions about Homemakers itself (how to list a property, how appointments work)
+- General advice that doesn't require a database lookup or current web data
+Examples: "Hi", "How do I schedule a visit", "What's the difference between renting and buying"
+
+Respond with only one word: sql, search, or chat."""
+
+    last_user_message = state["messages"][-1].content
+    
+    messages = [
+        SystemMessage(content=ROUTER_PROMPT),
+        HumanMessage(content=last_user_message)
+    ]
+    
+    result = await llm.ainvoke(messages)
+    decision = result.content.strip().lower()
+    
+    # Safety fallback in case the LLM outputs something unexpected
+    if decision not in ["sql", "search", "chat"]:
+        decision = "chat"
+    
+    return {"route": decision}
+
+
+async def route_decision(state: State):
+    route = state.get("route", "chat")
+    
+    if route == "sql":
+        return "sql_node"      # doesn't exist yet, placeholder for now
+    elif route == "search":
+        return "model"          # goes to your existing Tavily-bound model
+    else:
+        return "model"          # chat also goes to existing model, just won't trigger tool calls
 
 async def tools_router(state: State):
     last_message = state["messages"][-1]
@@ -78,8 +143,10 @@ async def tool_node(state):
 graph_builder = StateGraph(State)
 
 graph_builder.add_node("model", model)
+graph_builder.add_node("router",router)
+graph_builder.set_entry_point("router")
+graph_builder.add_conditional_edges("router", route_decision)
 graph_builder.add_node("tool_node", tool_node)
-graph_builder.set_entry_point("model")
 graph_builder.add_conditional_edges("model", tools_router)
 graph_builder.add_edge("tool_node", "model")
 
