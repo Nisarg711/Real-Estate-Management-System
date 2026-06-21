@@ -9,16 +9,141 @@ from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import json
 import os
+import psycopg2
 from uuid import uuid4
 from langgraph.checkpoint.memory import MemorySaver
 
 load_dotenv()
 
+
+def get_db_connection():
+    return psycopg2.connect(os.getenv("DATABASE_URL"))
+
+
+SCHEMA_TEXT_CACHE = None
+
+def fetch_schema_from_db():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Columns
+    cur.execute("""
+        SELECT table_name, column_name, data_type, is_nullable 
+        FROM information_schema.columns 
+        WHERE table_schema = 'project'
+        ORDER BY table_name, ordinal_position
+    """)
+    columns_rows = cur.fetchall()
+
+    # Primary keys
+    cur.execute("""
+        SELECT tc.table_name, kcu.column_name
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name
+          AND tc.table_schema = kcu.table_schema
+        WHERE tc.constraint_type = 'PRIMARY KEY'
+          AND tc.table_schema = 'project'
+    """)
+    pk_rows = cur.fetchall()
+
+    # Foreign keys
+    cur.execute("""
+        SELECT 
+          tc.table_name AS source_table,
+          kcu.column_name AS source_column,
+          ccu.table_name AS target_table,
+          ccu.column_name AS target_column
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name
+          AND tc.table_schema = kcu.table_schema
+        JOIN information_schema.constraint_column_usage ccu
+          ON tc.constraint_name = ccu.constraint_name
+          AND tc.table_schema = ccu.table_schema
+        WHERE tc.constraint_type = 'FOREIGN KEY'
+          AND tc.table_schema = 'project'
+    """)
+    fk_rows = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return columns_rows, pk_rows, fk_rows
+
+def convert_schema_to_text(columns_rows, pk_rows, fk_rows):
+    tables = {}
+
+    # Step 1: Initialize each table with its columns
+    for row in columns_rows:
+        table_name, column_name, data_type, is_nullable = row
+
+        if tables.get(table_name) is None:
+            tables[table_name] = {
+                "columns": [],
+                "primary_key": [],
+                "foreign_keys": [],
+            }
+
+        tables[table_name]["columns"].append({
+            "name": column_name,
+            "type": data_type,
+            "nullable": is_nullable == "YES",
+        })
+
+    # Step 2: Attach primary keys
+    for row in pk_rows:
+        table_name, column_name = row
+        if tables.get(table_name) is not None:
+            tables[table_name]["primary_key"].append(column_name)
+
+    # Step 3: Attach foreign keys
+    for row in fk_rows:
+        source_table, source_column, target_table, target_column = row
+        if tables.get(source_table) is not None:
+            tables[source_table]["foreign_keys"].append({
+                "column": source_column,
+                "references_table": target_table,
+                "references_column": target_column,
+            })
+
+    # Step 4: Build the final compact text representation
+    lines = []
+    for table_name, info in tables.items():
+        lines.append(f"Table: {table_name}")
+
+        # Build a quick lookup: column_name -> foreign key info (if any)
+        fk_lookup = {fk["column"]: fk for fk in info["foreign_keys"]}
+
+        for col in info["columns"]:
+            col_name = col["name"]
+            col_type = col["type"]
+
+            tags = []
+            if col_name in info["primary_key"]:
+                tags.append("PK")
+            if col_name in fk_lookup:
+                fk = fk_lookup[col_name]
+                tags.append(f"FK -> {fk['references_table']}.{fk['references_column']}")
+
+            tag_str = f" ({', '.join(tags)})" if tags else ""
+            lines.append(f"  {col_name}: {col_type}{tag_str}")
+
+        lines.append("")  # blank line between tables
+
+    return "\n".join(lines)
+    return
+
+
+
 # Initialize memory saver for checkpointing
 memory = MemorySaver()
 class State(TypedDict):
     messages: Annotated[list, add_messages]
-    route:Optional[str]
+    route: Optional[str]
+    sql_query: Optional[str]
+    sql_results: Optional[str]
+
 
 search_tool = TavilySearchResults(
     max_results=4,
