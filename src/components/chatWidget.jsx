@@ -55,7 +55,7 @@ export default function ChatWidget() {
 
     try {
       // let url = `/api/chat?message=${encodeURIComponent(userInput)}`;
-      let url=`http://127.0.0.1:8000/chat_stream/${encodeURIComponent(userInput)}`;
+      let url=`https://homemakers-latest.onrender.com/chat_stream/${encodeURIComponent(userInput)}`;
       if (checkpointId) {
         url += `?checkpoint_id=${encodeURIComponent(checkpointId)}`;
       }

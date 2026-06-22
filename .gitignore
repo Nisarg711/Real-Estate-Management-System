@@ -46,3 +46,14 @@ next-env.d.ts
 
 # Python virtual environments
 homemakers-agent/.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Python virtual environments
+.venv/
+venv/
+env/
