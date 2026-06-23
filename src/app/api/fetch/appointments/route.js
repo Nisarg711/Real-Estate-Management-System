@@ -13,9 +13,9 @@ export async function GET(request) {
       `SELECT 
          a.user_id,
          a.property_id,
-         a.issue_date,
+         a.issue_date::TEXT,
          a.issue_time,
-         a.visit_date,
+         a.visit_date::TEXT,
          a.visit_time,
          a.status,
          p.title,
@@ -28,7 +28,7 @@ export async function GET(request) {
        ORDER BY a.visit_date ASC, a.visit_time ASC`,
       [session.user.id]
     );
-
+    console.log("Fetched Result: ",result.rows)
     return NextResponse.json({ appointments: result.rows });
 }
 catch(err)

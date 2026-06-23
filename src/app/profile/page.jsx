@@ -32,9 +32,9 @@ export default function ProfilePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          propertyId: appt.property_id,
-          issueDate: appt.issue_date,
-          issueTime: appt.issue_time,
+          apn: appt.property_id,
+          Issue_date: appt.issue_date,
+          Issue_time: appt.issue_time,
         }),
       });
 
