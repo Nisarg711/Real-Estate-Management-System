@@ -105,7 +105,7 @@ const Navbar = ({ locations = [], onLocationChange }) => {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-6">
             <a href="#" className="text-dark-text-secondary font-medium hover:text-accent-primary transition">Buy</a>
-            <a href="#" className="text-dark-text-secondary font-medium hover:text-accent-primary transition">Sell</a>
+            <a href="/sell" className="text-dark-text-secondary font-medium hover:text-accent-primary transition">Sell</a>
             <a href="#" className="text-dark-text-secondary font-medium hover:text-accent-primary transition">About us</a>
           </div>
 
