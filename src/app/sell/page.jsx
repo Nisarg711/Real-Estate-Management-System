@@ -259,12 +259,13 @@ useEffect(() => {
       else if (!/^\d{6}$/.test(formData.pincode)) newErrors.pincode = 'Enter a valid 6-digit pincode';
 
       if (formData.partOfSociety) {
-        const regNoEntered = formData.societyRegNo.trim();
-        if (regNoEntered && societyCheckStatus === 'invalid' && !formData.societyName.trim()) {
-          newErrors.societyName = 'We couldn\'t find this society. Please name it so we can add it.';
-        }
-        if (!regNoEntered && !formData.societyName.trim()) {
-          newErrors.societyName = 'Society name is required';
+        // Society registration number is now required
+        if (!formData.societyRegNo.trim()) {
+          newErrors.societyRegNo = 'Society registration number is required';
+        } else if (!/^SOCI\d{3,}$/.test(formData.societyRegNo.trim())) {
+          newErrors.societyRegNo = 'Format should be SOCI followed by digits (e.g., SOCI001)';
+        } else if (societyCheckStatus === 'invalid') {
+          newErrors.societyName = 'This society was not found in our database. Please enter the society name below to add it.';
         }
       }
     }
@@ -694,16 +695,58 @@ useEffect(() => {
                 </label>
 
                 {formData.partOfSociety && (
-                  <div className="mt-3">
-                    <label className={labelClass}>Society Name</label>
-                    <input
-                      type="text"
-                      value={formData.societyName}
-                      onChange={(e) => updateField('societyName', e.target.value)}
-                      placeholder="e.g. Green Valley"
-                      className={inputClass('societyName')}
-                    />
-                    {errors.societyName && <p className="text-red-400 text-xs mt-1">{errors.societyName}</p>}
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <label className={labelClass}>Society Registration Number</label>
+                      <div className="relative">
+                        <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-text-muted" />
+                        <input
+                          type="text"
+                          value={formData.societyRegNo}
+                          onChange={(e) => updateField('societyRegNo', e.target.value)}
+                          placeholder="e.g. SOCI001"
+                          className={inputClass('societyRegNo') + ' pl-9 pr-9'}
+                        />
+                        {societyCheckStatus === 'checking' && (
+                          <Loader2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-text-muted animate-spin" />
+                        )}
+                        {societyCheckStatus === 'valid' && (
+                          <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400" />
+                        )}
+                        {societyCheckStatus === 'invalid' && (
+                          <AlertCircle size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400" />
+                        )}
+                      </div>
+                      <p className="text-dark-text-muted text-xs mt-1">
+                        Format: SOCI followed by digits (e.g., SOCI001, SOCI002)
+                      </p>
+                      {errors.societyRegNo && <p className="text-red-400 text-xs mt-1">{errors.societyRegNo}</p>}
+
+                      {societyCheckStatus === 'valid' && societyFoundName && (
+                        <p className="text-green-400 text-xs mt-1.5 flex items-center gap-1">
+                          <CheckCircle2 size={12} />
+                          Society found: {societyFoundName}
+                        </p>
+                      )}
+                      {societyCheckStatus === 'invalid' && formData.societyRegNo.trim() && (
+                        <p className="text-red-400 text-xs mt-1.5 flex items-center gap-1">
+                          <AlertCircle size={12} />
+                          This society registration number was not found. Please enter the society name below.
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className={labelClass}>Society Name</label>
+                      <input
+                        type="text"
+                        value={formData.societyName}
+                        onChange={(e) => updateField('societyName', e.target.value)}
+                        placeholder="e.g. Green Valley"
+                        className={inputClass('societyName')}
+                      />
+                      {errors.societyName && <p className="text-red-400 text-xs mt-1">{errors.societyName}</p>}
+                    </div>
                   </div>
                 )}
               </div>
