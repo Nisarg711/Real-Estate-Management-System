@@ -70,9 +70,8 @@ export default function SellPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [SelectedCountry,SetSelectedCountry]=useState("India");
-  const [SelectedState,SetSelectedState]=useState("");
-  const [states,setstates]=useState([])
+const [states, setStates] = useState([]);
+const [statesLoading, setStatesLoading] = useState(true);
 
 
   // Agent lookup state: 'idle' | 'checking' | 'valid' | 'invalid'
@@ -91,28 +90,19 @@ export default function SellPage() {
   };
 
 useEffect(() => {
-  const getStatesByCountry = async () => {
+  const fetchStates = async () => {
     try {
-      const res = await fetch("/api/fetch/states");
-
+      const res = await fetch('/api/fetch/states');
       const data = await res.json();
-
-      if (!res.ok) {
-        console.error(
-          "Failed to fetch states:",
-          data.error || "Unknown error"
-        );
-        return;
-      }
-
-      console.log("States fetched successfully:", data.message);
-      setstates(data.message); // if you want to update state
+      setStates(data.message || []);
+      console.log(data)
     } catch (err) {
-      console.error("Network error while fetching states:", err);
+      console.error('Failed to fetch states:', err);
+    } finally {
+      setStatesLoading(false);
     }
   };
-
-  getStatesByCountry();
+  fetchStates();
 }, []);
   // TODO: build /api/agent/verify — should accept { licenceNo } and return
   // { found: true, name: 'Agent Name' } or { found: false }
@@ -245,6 +235,7 @@ useEffect(() => {
       if (!formData.area) newErrors.area = 'Area is required';
       else if (Number(formData.area) <= 0) newErrors.area = 'Area must be greater than 0';
       if (!formData.availableFor) newErrors.availableFor = 'Select what this listing is for';
+      if (!formData.neighborhoodInfo.trim()) newErrors.neighborhoodInfo = 'Neighborhood information is required';
       if (formData.agentLcNo.trim() && agentCheckStatus === 'invalid') {
         newErrors.agentLcNo = 'This agent licence number was not found. Leave it blank or correct it.';
       }
@@ -299,7 +290,11 @@ useEffect(() => {
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(5)) return;
+    const fullValid = validateStep(1) && validateStep(2) && validateStep(3) && validateStep(4) && validateStep(5);
+    if (!fullValid) {
+      setStep(1);
+      return;
+    }
 
     setSubmitting(true);
     setSubmitError(null);
@@ -310,10 +305,6 @@ useEffect(() => {
     };
 
     try {
-      // TODO: build this endpoint — should insert into project.property,
-      // project.sell / project.rent depending on availableFor,
-      // project.individual_amenities, project.property_image,
-      // and project.society / project.shared_amenities if partOfSociety is true
       const res = await fetch('/api/property/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -323,7 +314,9 @@ useEffect(() => {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to list property');
+        const backendMessage = data?.error || 'Failed to list property';
+        const backendDetail = data?.details ? `: ${JSON.stringify(data.details)}` : '';
+        throw new Error(`${backendMessage}${backendDetail}`);
       }
 
       setSubmitted(true);
@@ -609,13 +602,17 @@ useEffect(() => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>State</label>
-                  <input
-                    type="text"
-                    value={formData.state}
-                    onChange={(e) => updateField('state', e.target.value)}
-                    placeholder="e.g. Gujarat"
-                    className={inputClass('state')}
-                  />
+                 <select
+              value={formData.state}
+              onChange={(e) => updateField('state', e.target.value)}
+              className={inputClass('state')}
+              disabled={statesLoading}
+            >
+            <option value="">{statesLoading ? 'Loading states...' : 'Select state'}</option>
+            {states.map((s) => (
+              <option key={s.iso2} value={s.name}>{s.name}</option>
+  ))}
+</select>
                   {errors.state && <p className="text-red-400 text-xs mt-1">{errors.state}</p>}
                 </div>
                 <div>

@@ -1,10 +1,46 @@
 'use client';
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { MapPin, Search } from 'lucide-react';
 
 const SearchBar = ({ onLocationRequest, location, locationLoading, userAddress }) => {
   const [activeFilter, setActiveFilter] = useState('buy');
   const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+
+
+  useEffect(() => {
+  if (searchQuery.trim().length < 2) {
+    setSuggestions([]);
+    setShowSuggestions(false);
+    return;
+  }
+ async function fetchsuggestions() {
+  setSuggestionsLoading(true);
+  try {
+    /*encodeURIComponent(searchQuery) — without it, queries containing spaces or
+     special characters could break the URL. */
+     const trimmedQuery = searchQuery.trim();
+    const result = await fetch(`/api/search/suggestions?query=${encodeURIComponent(trimmedQuery)}`);
+    const res = await result.json();
+    console.log(res)
+    setSuggestions(res.suggestions || []);
+    setShowSuggestions(true);
+  } catch (err) {
+    console.error("Suggestions fetch error:", err);
+    setSuggestions([]);
+  } finally {
+    setSuggestionsLoading(false);
+  }
+}
+
+  const timer=setTimeout(()=>{
+    fetchsuggestions();
+  },300);
+return () => clearTimeout(timer);  // ← add this
+}, [searchQuery]);
+
 
   const handleSearch = () => {
     console.log('Search query:', searchQuery);
