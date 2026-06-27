@@ -121,7 +121,7 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          <button onClick={() => signOut()} className="w-full mt-4 bg-red-950/30 hover:bg-red-950/50 text-red-400 hover:text-red-300 font-semibold py-2 px-4 rounded-lg transition border border-red-900/50">
+          <button onClick={() => signOut()} className="w-full mt-4 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border border-red-200 dark:bg-red-950/30 dark:hover:bg-red-950/50 dark:text-red-400 dark:hover:text-red-300 dark:border-red-900/50 font-semibold py-2 px-4 rounded-lg transition">
             Logout
           </button>
         </div>
@@ -217,7 +217,7 @@ export default function ProfilePage() {
                         <button
                           onClick={() => handleCancelAppointment(appt)}
                           disabled={isCancelling}
-                          className="w-full mt-4 flex items-center justify-center gap-2 bg-red-950/30 hover:bg-red-950/50 text-red-400 hover:text-red-300 font-medium py-2 rounded-lg transition border border-red-900/50 disabled:opacity-50 text-sm"
+                          className="w-full mt-4 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border border-red-200 dark:bg-red-950/30 dark:hover:bg-red-950/50 dark:text-red-400 dark:hover:text-red-300 dark:border-red-900/50 font-medium py-2 rounded-lg transition disabled:opacity-50 text-sm"
                         >
                           <X size={14} />
                           {isCancelling ? 'Cancelling...' : 'Cancel Appointment'}

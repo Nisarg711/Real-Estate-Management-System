@@ -2,30 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Refined Dark Theme Color Variables */
+/* Color Variables as RGB channels for Tailwind opacity support */
+/* Default: Dark Mode */
 :root {
-  --color-bg-primary: #0a0a0f;
-  --color-bg-secondary: #12121a;
-  --color-bg-tertiary: #16161f;
-  --color-bg-hover: #1e1e2a;
-  --color-border: #22222f;
-  --color-border-light: #2a2a38;
-  --color-text-primary: #e8e8eb;
-  --color-text-secondary: #a0a0a8;
-  --color-text-muted: #7a7a82;
-  --color-accent-primary: #3b82f6;
-  --color-accent-secondary: #1e40af;
-  --color-accent-light: #60a5fa;
+  --color-bg-primary: 10 10 15;
+  --color-bg-secondary: 18 18 26;
+  --color-bg-tertiary: 22 22 31;
+  --color-bg-hover: 30 30 42;
+  --color-border: 34 34 47;
+  --color-border-light: 42 42 56;
+  --color-text-primary: 232 232 235;
+  --color-text-secondary: 160 160 168;
+  --color-text-muted: 122 122 130;
+  --color-accent-primary: 59 130 246;
+  --color-accent-secondary: 30 64 175;
+  --color-accent-light: 96 165 250;
+  --color-accent-dark: 30 58 138;
+  --shadow-color: rgba(0, 0, 0, 0.7);
+  --shadow-glow: rgba(14, 165, 233, 0.15);
+}
+
+/* Light Mode Override */
+[data-theme='light'] {
+  --color-bg-primary: 248 250 252;
+  --color-bg-secondary: 255 255 255;
+  --color-bg-tertiary: 241 245 249;
+  --color-bg-hover: 226 232 240;
+  --color-border: 226 232 240;
+  --color-border-light: 203 213 225;
+  --color-text-primary: 15 23 42;
+  --color-text-secondary: 71 85 105;
+  --color-text-muted: 100 116 139;
+  --color-accent-primary: 37 99 235;
+  --color-accent-secondary: 29 78 216;
+  --color-accent-light: 59 130 246;
+  --color-accent-dark: 30 58 138;
+  --shadow-color: rgba(15, 23, 42, 0.08);
+  --shadow-glow: rgba(37, 99, 235, 0.08);
 }
 
 html {
-  background: var(--color-bg-primary);
+  background: rgb(var(--color-bg-primary));
 }
 
 body {
   min-height: 100vh;
-  background: var(--color-bg-primary);
-  color: var(--color-text-primary);
+  background: rgb(var(--color-bg-primary));
+  color: rgb(var(--color-text-primary));
   font-family: 'Segoe UI', Trebuchet MS, sans-serif;
   line-height: 1.6;
 }
@@ -42,14 +65,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-secondary);
+  background: rgb(var(--color-bg-secondary));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-light);
+  background: rgb(var(--color-border-light));
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3a48;
+  background: rgb(var(--color-bg-hover));
 }

@@ -336,7 +336,7 @@ useEffect(() => {
   };
 
   const inputClass = (field) =>
-    `w-full px-4 py-2.5 bg-dark-bg-primary border rounded-lg text-black placeholder:text-dark-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/40 transition ${
+    `w-full px-4 py-2.5 bg-dark-bg-primary border rounded-lg text-dark-text placeholder:text-dark-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/40 transition ${
       errors[field] ? 'border-red-500' : 'border-dark-border focus:border-accent-primary'
     }`;
 

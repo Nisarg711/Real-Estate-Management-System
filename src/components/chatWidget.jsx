@@ -323,7 +323,7 @@ export default function ChatWidget() {
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && sendMessage()}
               placeholder="Ask about properties..."
-              className="flex-1 bg-dark-bg-primary text-black border border-dark-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent-primary"
+              className="flex-1 bg-dark-bg-primary text-dark-text border border-dark-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent-primary"
             />
             <button
               onClick={sendMessage}

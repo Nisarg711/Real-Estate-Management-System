@@ -236,7 +236,7 @@ useEffect(()=>{
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Find Your Perfect Home
           </h1>
-          <p className="text-lg text-dark-text-secondary">
+          <p className="text-lg text-white/80">
             Welcome back, {session.user.name}
           </p>
         </div>

@@ -597,7 +597,7 @@ export default function PropertyDetailPage() {
                     value={contactData.phone}
                     onChange={handleContactChange}
                     required
-                    className="w-full px-3 py-2 bg-dark-bg-primary border border-dark-border rounded-lg text-black placeholder-dark-text-muted focus:outline-none focus:border-accent-primary"
+                    className="w-full px-3 py-2 bg-dark-bg-primary border border-dark-border rounded-lg text-dark-text placeholder-dark-text-muted focus:outline-none focus:border-accent-primary"
                   />
                   <textarea
                     name="message"
@@ -605,7 +605,7 @@ export default function PropertyDetailPage() {
                     value={contactData.message}
                     onChange={handleContactChange}
                     rows="3"
-                    className="w-full px-3 py-2 bg-dark-bg-primary border border-dark-border  rounded-lg text-black placeholder-dark-text-muted focus:outline-none focus:border-accent-primary resize-none"
+                    className="w-full px-3 py-2 bg-dark-bg-primary border border-dark-border  rounded-lg text-dark-text placeholder-dark-text-muted focus:outline-none focus:border-accent-primary resize-none"
                   />
                   <button type="submit" className="w-full bg-accent-primary hover:bg-accent-dark text-white font-semibold py-2 rounded-lg transition">
                     Send Message
@@ -703,7 +703,7 @@ export default function PropertyDetailPage() {
                   onChange={handleTourChange}
                   aria-invalid={Boolean(tourErrors.visitTime)}
                   aria-describedby={tourErrors.visitTime ? 'visit-time-error' : 'visit-time-help'}
-                  className={`w-full rounded-lg border bg-dark-bg-primary px-3 py-3 text-black outline-none transition focus:ring-2 focus:ring-accent-primary/30 ${
+                  className={`w-full rounded-lg border bg-dark-bg-primary px-3 py-3 text-dark-text outline-none transition focus:ring-2 focus:ring-accent-primary/30 ${
                     tourErrors.visitTime ? 'border-red-500' : 'border-dark-border focus:border-accent-primary'
                   }`}
                 >

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { MapPin, Search, User, Bell } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Search, User, Bell, Sun, Moon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAppointments } from '@/context/AppointmentsContext';
 
@@ -11,6 +11,19 @@ const Navbar = ({ locations = [], onLocationChange }) => {
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { appointments, loading } = useAppointments();
+  const [theme, setTheme] = useState('dark');
+
+  useEffect(() => {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    setTheme(currentTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    document.documentElement.setAttribute('data-theme', nextTheme);
+    localStorage.setItem('theme', nextTheme);
+  };
 
   // Count only upcoming, scheduled appointments
   const pendingAppointments = appointments.filter(
@@ -80,11 +93,10 @@ const Navbar = ({ locations = [], onLocationChange }) => {
                       <button
                         key={`${location.state}-${location.city}`}
                         onClick={() => handleCitySelect(location)}
-                        className={`w-full text-left px-3 py-2 rounded-lg transition ${
-                          selectedCity === location.city
+                        className={`w-full text-left px-3 py-2 rounded-lg transition ${selectedCity === location.city
                             ? 'bg-accent-primary text-white font-semibold'
                             : 'text-dark-text-secondary hover:bg-dark-bg-hover'
-                        }`}
+                          }`}
                       >
                         <span className="block">{location.city}</span>
                         {location.state && (
@@ -108,6 +120,16 @@ const Navbar = ({ locations = [], onLocationChange }) => {
             <a href="/sell" className="text-dark-text-secondary font-medium hover:text-accent-primary transition">Sell</a>
             <a href="#" className="text-dark-text-secondary font-medium hover:text-accent-primary transition">About us</a>
           </div>
+
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-full hover:bg-dark-bg-hover transition text-dark-text-secondary"
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label="Toggle Theme"
+          >
+            {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
+          </button>
 
           {/* Profile Icon with Badge */}
           <button
